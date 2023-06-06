@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HBAR Watch</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      var last100Transfers = [];
+      var price;
+      var minAmount = localStorage.getItem('minAmount') ? parseFloat(localStorage.getItem('minAmount')) : 100;
+      var alertThreshold = localStorage.getItem('alertThreshold') ? parseFloat(localStorage.getItem('alertThreshold')) : 50000;
+
+      function fetchPrice() {
+        $.get('price.txt', function(data) {
+          price = parseFloat(data);
+        });
+      }
+
+      fetchPrice();
+      setInterval(fetchPrice, 60000);
+
+      function updateContent() {
+        if (!price) {
+          return;
+        }
+
+        $.ajax({
+          url: 'https://mainnet-public.mirrornode.hedera.com/api/v1/transactions?transactionType=cryptotransfer&limit=200',
+          type: 'GET',
+          dataType: 'json',
+          success: function(data) {
+            var transactions = data.transactions;
+            for (var i = 0; i < transactions.length; i++) {
+              var transaction = transactions[i];
+              var transfers = transaction['transfers'];
+              var consensusTimestamp = transaction['consensus_timestamp'];
+              var consensusTimestampReadable = new Date(parseInt(consensusTimestamp.split('.')[0]) * 1000).toLocaleString();
+              for (var k = 0; k < transfers.length; k++) {
+                var transfer = transfers[k];
+                var account = transfer['account'];
+                var amount = parseInt(transfer['amount']) / 100000000 * price;
+                if (amount >= minAmount) {
+                  if (amount >= alertThreshold) {
+                    playAlertSound();
+                  }
+                  amount = '$' + amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                  var transferData = {timestamp: consensusTimestamp, timestampReadable: consensusTimestampReadable, account: account, amount: amount};
+                  if (!last100Transfers.some(t => t.timestamp === consensusTimestamp)) {
+                    last100Transfers.unshift(transferData);
+                    if (last100Transfers.length > 100) {
+                      last100Transfers.pop();
+                    }
+                  }
+                }
+              }
+            }
+
+            var tableRows = '';
+            for (var i = 0; i < last100Transfers.length; i++) {
+              var transfer = last100Transfers[i];
+              var link = 'https://hashscan.io/mainnet/transaction/' + transfer.timestamp;
+              tableRows += '<tr><td><a href="' + link + '" target="_blank">' + transfer.timestampReadable + '</a></td><td>' + transfer.account + '</td><td>' + transfer.amount + '</td></tr>';
+            }
+
+            $('#content tbody').html(tableRows);
+          },
+          error: function(xhr, status, error) {
+            console.log('Error: ' + error);
+          }
+        });
+      }
+
+      setInterval(updateContent, 1000);
+
+      $('#updateMinAmount').click(function() {
+        var newMinAmount = parseFloat($('#minAmountInput').val());
+        if (!isNaN(newMinAmount)) {
+          minAmount = newMinAmount;
+          localStorage.setItem('minAmount', minAmount);
+        } else {
+          alert('Please enter a valid number.');
+        }
+      });
+
+      $('#updateAlertThreshold').click(function() {
+        var newAlertThreshold = parseFloat($('#alertThresholdInput').val());
+        if (!isNaN(newAlertThreshold)) {
+          alertThreshold = newAlertThreshold;
+          localStorage.setItem('alertThreshold', alertThreshold);
+        } else {
+          alert('Please enter a valid number.');
+        }
+      });
+
+      $('#minAmountInput').val(minAmount);
+      $('#alertThresholdInput').val(alertThreshold);
+    });
+
+    function playAlertSound() {
+      document.getElementById('alertSound').play();
+    }
+  </script>
+  <style>
+    /* Dark mode global styles */
+    body {
+      background-color: #1e1e1e;
+      color: #d1d1d1;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Dark mode table styles */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #555;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #333;
+      color: #fff;
+    }
+
+    tr:nth-child(even) {
+      background-color: #2b2b2b;
+    }
+
+    tr:hover {
+      background-color: #444;
+    }
+
+    a {
+      color: #1a8cff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* Dark mode input field and button styles */
+    input[type="number"],
+    button {
+      font-family: Arial, sans-serif;
+      padding: 6px 12px;
+      margin: 5px;
+      border: 1px solid #555;
+      background-color: #333;
+      color: #d1d1d1;
+      cursor: pointer;
+    }
+
+    input[type="number"]:focus,
+    button:focus {
+      outline: none;
+      border-color: #1a8cff;
+    }
+
+    button:hover {
+      background-color: #1a8cff;
+      color: #1e1e1e;
+    }
+    .lds-facebook {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+    }
+    .lds-facebook div {
+      display: inline-block;
+      position: absolute;
+      left: 8px;
+      width: 16px;
+      background: #d1d1d1;
+      animation: lds-facebook 1.2s cubic-bezier(0, 0.5, 0.5, 1) infinite;
+    }
+    .lds-facebook div:nth-child(1) {
+      left: 8px;
+      animation-delay: -0.24s;
+    }
+    .lds-facebook div:nth-child(2) {
+      left: 32px;
+      animation-delay: -0.12s;
+    }
+    .lds-facebook div:nth-child(3) {
+      left: 56px;
+      animation-delay: 0;
+    }
+    @keyframes lds-facebook {
+      0% {
+        top: 8px;
+        height: 64px;
+      }
+      50%, 100% {
+        top: 24px;
+        height: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>HBAR Watch <div class="lds-facebook"><div></div><div></div><div></div></div></h1>
+  <label for="minAmountInput">Minimum Transfer Amount Filter (USD):</label>
+  <input type="number" id="minAmountInput" value="100" step="0.01" min="0">
+  <button id="updateMinAmount">Update</button>
+  <label for="alertThresholdInput">Alert Threshold (USD):</label>
+  <input type="number" id="alertThresholdInput" value="50000" step="0.01" min="0">
+  <button id="updateAlertThreshold">Update</button>
+  <table id="content">
+    <thead>
+      <tr>
+        <th>Consensus Timestamp</th>
+        <th>Account</th>
+        <th>Transfer Amount (USD)</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+  <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
+</body>
+</html>
+
