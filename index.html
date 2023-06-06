@@ -11,10 +11,13 @@
       var alertThreshold = localStorage.getItem('alertThreshold') ? parseFloat(localStorage.getItem('alertThreshold')) : 50000;
 
       function fetchPrice() {
-        $.get('price.txt', function(data) {
-          price = parseFloat(data);
-        });
-      }
+    $.get('https://mainnet-public.mirrornode.hedera.com/api/v1/network/exchangerate', function(data) {
+      var currentRate = data.current_rate;
+      var centEquivalent = currentRate.cent_equivalent;
+      var hbarEquivalent = currentRate.hbar_equivalent;
+      price = centEquivalent / hbarEquivalent / 100;
+      });
+    }
 
       fetchPrice();
       setInterval(fetchPrice, 60000);
@@ -70,7 +73,8 @@
         });
       }
 
-      setInterval(updateContent, 1000);
+      updateContent(); // Call it once immediately on load
+      setInterval(updateContent, 3000); // And then every 3 seconds
 
       $('#updateMinAmount').click(function() {
         var newMinAmount = parseFloat($('#minAmountInput').val());
