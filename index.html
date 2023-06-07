@@ -43,11 +43,12 @@
                 var account = transfer['account'];
                 var amount = parseInt(transfer['amount']) / 100000000 * price;
                 if (amount >= minAmount) {
-                  if (amount >= alertThreshold) {
+                  var transferData = {timestamp: consensusTimestamp, timestampReadable: consensusTimestampReadable, account: account, amount: amount, alerted: false};
+                  if (amount >= alertThreshold && !last100Transfers.some(t => t.timestamp === consensusTimestamp && t.alerted)) {
                     playAlertSound();
+                    transferData.alerted = true;
                   }
                   amount = '$' + amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                  var transferData = {timestamp: consensusTimestamp, timestampReadable: consensusTimestampReadable, account: account, amount: amount};
                   if (!last100Transfers.some(t => t.timestamp === consensusTimestamp)) {
                     last100Transfers.unshift(transferData);
                     if (last100Transfers.length > 100) {
