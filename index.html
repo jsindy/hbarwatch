@@ -12,13 +12,13 @@
       var alertThreshold = localStorage.getItem('alertThreshold') ? parseFloat(localStorage.getItem('alertThreshold')) : 50000;
 
       function fetchPrice() {
-    $.get('https://mainnet-public.mirrornode.hedera.com/api/v1/network/exchangerate', function(data) {
-      var currentRate = data.current_rate;
-      var centEquivalent = currentRate.cent_equivalent;
-      var hbarEquivalent = currentRate.hbar_equivalent;
-      price = centEquivalent / hbarEquivalent / 100;
-      });
-    }
+        $.get('https://mainnet-public.mirrornode.hedera.com/api/v1/network/exchangerate', function(data) {
+          var currentRate = data.current_rate;
+          var centEquivalent = currentRate.cent_equivalent;
+          var hbarEquivalent = currentRate.hbar_equivalent;
+          price = centEquivalent / hbarEquivalent / 100;
+        });
+      }
 
       fetchPrice();
       setInterval(fetchPrice, 60000);
@@ -49,7 +49,6 @@
                     playAlertSound();
                     transferData.alerted = true;
                   }
-                  amount = '$' + amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                   if (!last100Transfers.some(t => t.timestamp === consensusTimestamp)) {
                     last100Transfers.unshift(transferData);
                     if (last100Transfers.length > 100) {
@@ -64,7 +63,8 @@
             for (var i = 0; i < last100Transfers.length; i++) {
               var transfer = last100Transfers[i];
               var link = 'https://hashscan.io/mainnet/transaction/' + transfer.timestamp;
-              tableRows += '<tr><td><a href="' + link + '" target="_blank">' + transfer.timestampReadable + '</a></td><td>' + transfer.account + '</td><td>' + transfer.amount + '</td></tr>';
+              var formattedAmount = transfer.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+              tableRows += '<tr><td><a href="' + link + '" target="_blank">' + transfer.timestampReadable + '</a></td><td>' + transfer.account + '</td><td>' + formattedAmount + '</td></tr>';
             }
 
             $('#content tbody').html(tableRows);
