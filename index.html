@@ -1,132 +1,171 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <title>HBAR Watch</title>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <link rel="stylesheet" href="style.css">
-  <script>
-    $(document).ready(function() {
-      var last100Transfers = [];
-      var price;
-      var minAmount = localStorage.getItem('minAmount') ? parseFloat(localStorage.getItem('minAmount')) : 100;
-      var alertThreshold = localStorage.getItem('alertThreshold') ? parseFloat(localStorage.getItem('alertThreshold')) : 50000;
+    <title>HBAR Watch</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        $(document).ready(function () {
+            var last100Transfers = [];
+            var countedTransfers = new Set(); // Keep track of transfers that have been counted
+            var price;
+            var minAmount = localStorage.getItem('minAmount') ? parseFloat(localStorage.getItem('minAmount')) : 100;
+            var alertThreshold = localStorage.getItem('alertThreshold') ? parseFloat(localStorage.getItem('alertThreshold')) : 50000;
+            var totalValue = 0;
+            var accumulationStartTime = new Date();
 
-      function fetchPrice() {
-        $.get('https://mainnet-public.mirrornode.hedera.com/api/v1/network/exchangerate', function(data) {
-          var currentRate = data.current_rate;
-          var centEquivalent = currentRate.cent_equivalent;
-          var hbarEquivalent = currentRate.hbar_equivalent;
-          price = centEquivalent / hbarEquivalent / 100;
-        });
-      }
+            function fetchPrice() {
+                $.get('https://mainnet-public.mirrornode.hedera.com/api/v1/network/exchangerate', function (data) {
+                    var currentRate = data.current_rate;
+                    var centEquivalent = currentRate.cent_equivalent;
+                    var hbarEquivalent = currentRate.hbar_equivalent;
+                    price = centEquivalent / hbarEquivalent / 100;
+                });
+            }
 
-      fetchPrice();
-      setInterval(fetchPrice, 60000);
+            fetchPrice();
+            setInterval(fetchPrice, 60000);
 
-      function updateContent() {
-        if (!price) {
-          return;
-        }
-
-        $.ajax({
-          url: 'https://mainnet-public.mirrornode.hedera.com/api/v1/transactions?transactionType=cryptotransfer&limit=100',
-          type: 'GET',
-          dataType: 'json',
-          success: function(data) {
-            var transactions = data.transactions;
-            for (var i = 0; i < transactions.length; i++) {
-              var transaction = transactions[i];
-              var transfers = transaction['transfers'];
-              var consensusTimestamp = transaction['consensus_timestamp'];
-              var consensusTimestampReadable = new Date(parseInt(consensusTimestamp.split('.')[0]) * 1000).toLocaleString();
-              for (var k = 0; k < transfers.length; k++) {
-                var transfer = transfers[k];
-                var account = transfer['account'];
-                var amount = parseInt(transfer['amount']) / 100000000 * price;
-                if (amount >= minAmount) {
-                  var transferData = {timestamp: consensusTimestamp, timestampReadable: consensusTimestampReadable, account: account, amount: amount, alerted: false};
-                  if (amount >= alertThreshold && !last100Transfers.some(t => t.timestamp === consensusTimestamp && t.alerted)) {
-                    playAlertSound();
-                    transferData.alerted = true;
-                  }
-                  if (!last100Transfers.some(t => t.timestamp === consensusTimestamp)) {
-                    last100Transfers.unshift(transferData);
-                    if (last100Transfers.length > 100) {
-                      last100Transfers.pop();
-                    }
-                  }
+            function updateContent() {
+                if (!price) {
+                    return;
                 }
-              }
+
+                $.ajax({
+                    url: 'https://mainnet-public.mirrornode.hedera.com/api/v1/transactions?transactionType=cryptotransfer&limit=100',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        var transactions = data.transactions;
+
+                        for (var i = 0; i < transactions.length; i++) {
+                            var transaction = transactions[i];
+                            var transfers = transaction['transfers'];
+                            var consensusTimestamp = transaction['consensus_timestamp'];
+
+                            for (var k = 0; k < transfers.length; k++) {
+                                var transfer = transfers[k];
+                                var account = transfer['account'];
+                                var amount = parseInt(transfer['amount']) / 100000000 * price;
+
+                                // Construct a unique key for this transfer
+                                var transferKey = consensusTimestamp + "-" + k;
+
+                                // Only add to totalValue if this transfer hasn't been counted yet
+                                if (amount >= 0 && !countedTransfers.has(transferKey)) {
+                                    totalValue += amount;
+                                    countedTransfers.add(transferKey);
+                                }
+
+                                if (amount >= minAmount) {
+                                    var consensusTimestampReadable = new Date(parseInt(consensusTimestamp.split('.')[0]) * 1000).toLocaleString();
+                                    var transferData = {
+                                        timestamp: consensusTimestamp,
+                                        timestampReadable: consensusTimestampReadable,
+                                        account: account,
+                                        amount: amount,
+                                        alerted: false
+                                    };
+                                    if (amount >= alertThreshold && !last100Transfers.some(t => t.timestamp === consensusTimestamp && t.alerted)) {
+                                        playAlertSound();
+                                        transferData.alerted = true;
+                                    }
+                                    if (!last100Transfers.some(t => t.timestamp === consensusTimestamp)) {
+                                        last100Transfers.unshift(transferData);
+                                        if (last100Transfers.length > 100) {
+                                            last100Transfers.pop();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        var totalSeconds = Math.floor((new Date() - accumulationStartTime) / 1000);
+                        var hours = Math.floor(totalSeconds / 3600);
+                        var minutes = Math.floor((totalSeconds - (hours * 3600)) / 60);
+                        var seconds = totalSeconds - (hours * 3600) - (minutes * 60);
+                        var elapsedTimeFormatted = hours.toString().padStart(2, '0') + 'h' + minutes.toString().padStart(2, '0') + 'm' + seconds.toString().padStart(2, '0') + 's';
+
+                        $('#totalValue').html('<span class="amount-green">' + totalValue.toLocaleString('en-US', { style: 'currency', currency: 'USD' }) + '</span> since ' + elapsedTimeFormatted);
+
+                        var tableRows = '';
+                        for (var i = 0; i < last100Transfers.length; i++) {
+                            var transfer = last100Transfers[i];
+                            var link = 'https://hashscan.io/mainnet/transaction/' + transfer.timestamp;
+                            var formattedAmount = transfer.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                            tableRows += '<tr><td><a href="' + link + '" target="_blank">' + transfer.timestampReadable + '</a></td><td>' + transfer.account + '</td><td>' + formattedAmount + '</td></tr>';
+                        }
+
+                        $('#content tbody').html(tableRows);
+                    },
+                    error: function (xhr, status, error) {
+                        console.log('Error: ' + error);
+                    }
+                });
             }
 
-            var tableRows = '';
-            for (var i = 0; i < last100Transfers.length; i++) {
-              var transfer = last100Transfers[i];
-              var link = 'https://hashscan.io/mainnet/transaction/' + transfer.timestamp;
-              var formattedAmount = transfer.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-              tableRows += '<tr><td><a href="' + link + '" target="_blank">' + transfer.timestampReadable + '</a></td><td>' + transfer.account + '</td><td>' + formattedAmount + '</td></tr>';
-            }
+            updateContent();
+            setInterval(updateContent, 3000);
 
-            $('#content tbody').html(tableRows);
-          },
-          error: function(xhr, status, error) {
-            console.log('Error: ' + error);
-          }
+            $('#updateMinAmount').click(function () {
+                var newMinAmount = parseFloat($('#minAmountInput').val());
+                if (!isNaN(newMinAmount)) {
+                    minAmount = newMinAmount;
+                    localStorage.setItem('minAmount', minAmount);
+                } else {
+                    alert('Please enter a valid number.');
+                }
+            });
+
+            $('#updateAlertThreshold').click(function () {
+                var newAlertThreshold = parseFloat($('#alertThresholdInput').val());
+                if (!isNaN(newAlertThreshold)) {
+                    alertThreshold = newAlertThreshold;
+                    localStorage.setItem('alertThreshold', alertThreshold);
+                } else {
+                    alert('Please enter a valid number.');
+                }
+            });
+
+            $('#minAmountInput').val(minAmount);
+            $('#alertThresholdInput').val(alertThreshold);
         });
-      }
 
-      updateContent(); // Call it once immediately on load
-      setInterval(updateContent, 3000); // And then every 3 seconds
-
-      $('#updateMinAmount').click(function() {
-        var newMinAmount = parseFloat($('#minAmountInput').val());
-        if (!isNaN(newMinAmount)) {
-          minAmount = newMinAmount;
-          localStorage.setItem('minAmount', minAmount);
-        } else {
-          alert('Please enter a valid number.');
+        function playAlertSound() {
+            document.getElementById('alertSound').play();
         }
-      });
-
-      $('#updateAlertThreshold').click(function() {
-        var newAlertThreshold = parseFloat($('#alertThresholdInput').val());
-        if (!isNaN(newAlertThreshold)) {
-          alertThreshold = newAlertThreshold;
-          localStorage.setItem('alertThreshold', alertThreshold);
-        } else {
-          alert('Please enter a valid number.');
-        }
-      });
-
-      $('#minAmountInput').val(minAmount);
-      $('#alertThresholdInput').val(alertThreshold);
-    });
-
-    function playAlertSound() {
-      document.getElementById('alertSound').play();
-    }
-  </script>
+    </script>
 </head>
+
 <body>
-  <h1>HBAR Watch <div class="lds-facebook"><div></div><div></div><div></div></div></h1>
-  <a href="https://github.com/jsindy/hbarwatch">github.com/jsindy/hbarwatch</a><br><br>
-  <label for="minAmountInput">Minimum Transfer Amount Filter (USD):</label>
-  <input type="number" id="minAmountInput" value="100" step="0.01" min="0">
-  <button id="updateMinAmount">Update</button>
-  <label for="alertThresholdInput">Alert Threshold (USD):</label>
-  <input type="number" id="alertThresholdInput" value="50000" step="0.01" min="0">
-  <button id="updateAlertThreshold">Update</button>
-  <table id="content">
-    <thead>
-      <tr>
-        <th>Consensus Timestamp</th>
-        <th>Account</th>
-        <th>Transfer Amount (USD)</th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
-  <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
+    <h1>HBAR Watch
+        <div class="lds-facebook">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </h1>
+    <a href="https://github.com/jsindy/hbarwatch">github.com/jsindy/hbarwatch</a><br><br>
+    <p>Total Value of HBAR transactions: <span id="totalValue"></span></p>
+    <label for="minAmountInput">Minimum Transfer Amount Filter (USD):</label>
+    <input type="number" id="minAmountInput" value="100" step="0.01" min="0">
+    <button id="updateMinAmount">Update</button>
+    <label for="alertThresholdInput">Alert Threshold (USD):</label>
+    <input type="number" id="alertThresholdInput" value="50000" step="0.01" min="0">
+    <button id="updateAlertThreshold">Update</button>
+    <table id="content">
+        <thead>
+            <tr>
+                <th>Consensus Timestamp</th>
+                <th>Account</th>
+                <th>Transfer Amount (USD)</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
 </body>
+
 </html>
