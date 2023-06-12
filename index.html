@@ -3,6 +3,7 @@
 
 <head>
     <title>HBAR Watch</title>
+    <meta name="description" content="HBAR Watch displays a live feed of HBAR transfers fetched from a REST API endpoint. Track Hedera HBAR transactions and set alerts for transfers that exceed your set value.">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="style.css?v=0.1">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -12,6 +13,17 @@
     <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="theme-color" content="#ffffff">
+    <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          "name": "HBAR Watch",
+          "url": "https://hbar.watch",
+          "description": "This web application displays a live feed of Hedera HBAR transfers fetched from a REST API endpoint. The app provides user-adjustable settings for minimum transfer amount and an alert threshold.",
+          "applicationCategory": "FinanceApplication",
+          "operatingSystem": "All"
+        }
+    </script>        
     <script>
         $(document).ready(function () {
             var last100Transfers = [];
