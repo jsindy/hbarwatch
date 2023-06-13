@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HBAR Watch</title>
     <meta name="description" content="HBAR Watch displays a live feed of HBAR transfers fetched from a REST API endpoint. Track Hedera HBAR transactions and set alerts for transfers that exceed your set value.">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -23,7 +25,8 @@
           "applicationCategory": "FinanceApplication",
           "operatingSystem": "All"
         }
-    </script>        
+    </script>
+     
     <script>
         $(document).ready(function () {
             var last100Transfers = [];
@@ -158,32 +161,40 @@
 </head>
 
 <body>
-    <h1>HBAR Watch
-        <div class="lds-facebook">
-            <div></div>
-            <div></div>
-            <div></div>
-        </div>
-    </h1>
-    <a href="https://github.com/jsindy/hbarwatch">github.com/jsindy/hbarwatch</a><br><br>
-    <p>Total Value of HBAR transactions: <span id="totalValue"></span></p>
-    <label for="minAmountInput">Minimum Transfer Amount Filter (USD):</label>
-    <input type="number" id="minAmountInput" value="100" step="0.01" min="0">
-    <button id="updateMinAmount">Update</button>
-    <label for="alertThresholdInput">Alert Threshold (USD):</label>
-    <input type="number" id="alertThresholdInput" value="50000" step="0.01" min="0">
-    <button id="updateAlertThreshold">Update</button>
-    <table id="content">
-        <thead>
-            <tr>
-                <th>Consensus Timestamp</th>
-                <th>Account</th>
-                <th>Transfer Amount (USD)</th>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
+    <header>
+        <h1>HBAR Watch
+            <div class="lds-facebook">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+        </h1>
+    </header>
+    <main>
+        <section>
+            <a href="https://github.com/jsindy/hbarwatch">github.com/jsindy/hbarwatch</a><br><br>
+            <p>Total Value of HBAR transactions: <span id="totalValue"></span></p>
+            <label for="minAmountInput">Minimum Transfer Amount Filter (USD):</label>
+            <input type="number" id="minAmountInput" value="100" step="0.01" min="0">
+            <button id="updateMinAmount">Update</button>
+            <label for="alertThresholdInput">Alert Threshold (USD):</label>
+            <input type="number" id="alertThresholdInput" value="50000" step="0.01" min="0">
+            <button id="updateAlertThreshold">Update</button>
+        </section>
+        <section>
+            <table id="content">
+                <thead>
+                    <tr>
+                        <th>Consensus Timestamp</th>
+                        <th>Account</th>
+                        <th>Transfer Amount (USD)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </section>
+    </main>
     <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
 </body>
 
