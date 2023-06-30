@@ -75,10 +75,11 @@
                                 var transferKey = consensusTimestamp + "-" + k;
 
                                 // Only add to totalValue if this transfer hasn't been counted yet
-                                if (amount >= alertThreshold && !last100Transfers.some(t => t.timestamp === consensusTimestamp && t.alerted)) {
-                                    playAlertSound();
-                                    transferData.alerted = true;
+                                if (amount >= 0 && !countedTransfers.has(transferKey)) {
+                                    totalValue += amount;
+                                    countedTransfers.add(transferKey);
                                 }
+
                                 if (amount >= minAmount) {
                                     var consensusTimestampReadable = new Date(parseInt(consensusTimestamp.split('.')[0]) * 1000).toLocaleString();
                                     var transferData = {
