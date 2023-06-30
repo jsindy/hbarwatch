@@ -75,26 +75,9 @@
                                 var transferKey = consensusTimestamp + "-" + k;
 
                                 // Only add to totalValue if this transfer hasn't been counted yet
-                                if (amount >= minAmount) {
-                                    var consensusTimestampReadable = new Date(parseInt(consensusTimestamp.split('.')[0]) * 1000).toLocaleString();
-                                    var transferData = {
-                                        timestamp: consensusTimestamp,
-                                        timestampReadable: consensusTimestampReadable,
-                                        account: account,
-                                        amount: amount
-                                    };
-
-                                    if (amount >= alertThreshold && !countedTransfers.has(transferKey)) {
-                                        playAlertSound();
-                                        transferData.alerted = true;
-                                    }
-
-                                    if (!last100Transfers.some(t => t.timestamp === consensusTimestamp)) {
-                                        last100Transfers.unshift(transferData);
-                                        if (last100Transfers.length > 100) {
-                                            last100Transfers.pop();
-                                        }
-                                    }
+                                if (amount >= alertThreshold && !last100Transfers.some(t => t.timestamp === consensusTimestamp && t.alerted)) {
+                                    playAlertSound();
+                                    transferData.alerted = true;
                                 }
                                 if (amount >= minAmount) {
                                     var consensusTimestampReadable = new Date(parseInt(consensusTimestamp.split('.')[0]) * 1000).toLocaleString();
