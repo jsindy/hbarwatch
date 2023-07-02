@@ -1,4 +1,4 @@
-# hbar.watch
+# [hbar.watch](https://hbar.watch)
 
 This web application displays a live feed of HBAR transfers fetched from a REST API endpoint. The app is designed with dark mode and provides user-adjustable settings for minimum transfer amount and an alert threshold. The alert threshold triggers an audio notification when a transfer amount meets or exceeds the set value.
 
