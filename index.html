@@ -89,7 +89,7 @@
                                         amount: amount,
                                         alerted: false
                                     };
-                                    if (amount >= alertThreshold && !last100Transfers.some(t => t.timestamp === consensusTimestamp && t.alerted)) {
+                                    if (amount >= alertThreshold && !last100Transfers.some(t => t.timestamp === consensusTimestamp && t.amount === amount && t.alerted)) {
                                         playAlertSound();
                                         transferData.alerted = true;
                                     }
