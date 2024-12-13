@@ -1,51 +1,135 @@
 /* Dark mode global styles */
 body {
-  background-color: #1e1e1e;
-  color: #d1d1d1;
-  font-family: Arial, sans-serif;
+  font-family: 'Roboto', sans-serif;
+  background-color: #0f172a; /* Primary Background */
+  color: #e2e8f0; /* Primary Text */
+  line-height: 1.6;
   margin: 0;
   padding: 0;
 }
 
-/* Dark mode table styles */
+header {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: #0f172a;
+  justify-content: space-between;
+}
+
+.filter-toggle {
+  background: #333;
+  color: #d1d1d1;
+  border: 1px solid #555;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.filter-toggle:hover,
+.filter-toggle:focus {
+  background-color: #1a8cff;
+  color: #1e1e1e;
+  outline: none;
+  outline-offset: 2px;
+  outline: 2px solid #38bdf8;
+}
+
+/* Stats section styling */
+.stats-section {
+  padding: 1rem;
+}
+
+.github-link a {
+  color: #38bdf8;
+  text-decoration: none;
+  margin-right: 1rem;
+}
+.github-link a:hover,
+.github-link a:focus {
+  text-decoration: underline;
+  outline: none;
+  outline-offset: 2px;
+  outline: 2px solid #38bdf8;
+}
+
+.total-value {
+  font-size: 1.25rem; /* Larger and bolder for key metrics */
+  font-weight: 700;
+  margin: 1rem 0;
+}
+
+.info-icon {
+  margin-left: 0.5rem;
+  cursor: help;
+}
+
+/* Toast message */
+#toast {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #e2e8f0;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  z-index: 9999;
+  font-size: 0.9rem;
+}
+
+/* Table and transactions section */
+.transactions-section {
+  margin: 1rem;
+}
+
 table {
-  border-collapse: collapse;
   width: 100%;
-  margin-top: 20px;
+  border-collapse: collapse;
+}
+
+thead {
+  background-color: #1e293b; /* Secondary background for headers */
+  position: sticky;
+  top: 0;
 }
 
 th,
 td {
-  border: 1px solid #555;
-  padding: 8px;
+  padding: 0.75rem;
   text-align: left;
+  border-bottom: 1px solid #4b5563; /* Borders and Dividers */
 }
 
 th {
-  background-color: #333;
-  color: #fff;
-}
-
-tr:nth-child(even) {
-  background-color: #2b2b2b;
+  color: #94a3b8; /* Secondary text/muted labels */
+  font-weight: 700;
 }
 
 tr:hover {
-  background-color: #444;
+  background-color: #2d3748; /* Surface Hover State */
 }
 
 a {
-  color: #1a8cff;
+  color: #38bdf8; /* Primary Accent for links */
   text-decoration: none;
 }
-
-a:hover {
+a:hover,
+a:focus {
   text-decoration: underline;
+  outline: none;
+  outline-offset: 2px;
+  outline: 2px solid #38bdf8;
 }
 
-/* Dark mode input field and button styles */
+/* Alert rows (large transfers) */
+.alert-row {
+  background-color: #f87171; /* Alerts/Warnings */
+  color: #0f172a;
+}
+
+/* Input and button styles */
 input[type="number"],
-button {
+button.btn {
   font-family: Arial, sans-serif;
   padding: 6px 12px;
   margin: 5px;
@@ -53,26 +137,28 @@ button {
   background-color: #333;
   color: #d1d1d1;
   cursor: pointer;
+  font-size: 0.9rem;
 }
 
 input[type="number"]:focus,
-button:focus {
-  outline: none;
+button.btn:focus {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
   border-color: #1a8cff;
 }
 
-button:hover {
+button.btn:hover {
   background-color: #1a8cff;
   color: #1e1e1e;
 }
 
+/* Loading animation */
 .lds-facebook {
   display: inline-block;
   position: relative;
   width: 80px;
   height: 80px;
 }
-
 .lds-facebook div {
   display: inline-block;
   position: absolute;
@@ -83,19 +169,18 @@ button:hover {
 }
 
 .amount-green {
-  color: rgb(57, 200, 105);
+  color: #39c869; /* Success/Growth indicators */
+  font-weight: bold;
 }
 
 .lds-facebook div:nth-child(1) {
   left: 8px;
   animation-delay: -0.24s;
 }
-
 .lds-facebook div:nth-child(2) {
   left: 32px;
   animation-delay: -0.12s;
 }
-
 .lds-facebook div:nth-child(3) {
   left: 56px;
   animation-delay: 0;
@@ -113,7 +198,30 @@ button:hover {
   }
 }
 
-/* Responsive styles */
+/* Filters panel */
+.filters {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  transition: max-height 0.3s ease; /* Animated Transition */
+  overflow: hidden;
+  max-height: 0;
+  width: 100%;
+  background-color: #0f172a;
+  padding: 0 1rem;
+}
+
+.filters.open {
+  max-height: 300px; /* enough space to show filter controls */
+  padding: 1rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
   th,
   td {
@@ -121,7 +229,46 @@ button:hover {
   }
 
   input[type="number"],
-  button {
+  button.btn {
     font-size: 14px;
   }
+
+  /* Hide table headers on mobile and transform rows into cards */
+  thead {
+    display: none;
+  }
+
+  table,
+  tbody,
+  tr,
+  td {
+    display: block;
+    width: 100%;
+  }
+
+  tr {
+    background-color: #1e293b;
+    margin-bottom: 1rem;
+    border: 1px solid #4b5563;
+    border-radius: 4px;
+    padding: 0.5rem;
+  }
+
+  td {
+    border-bottom: none;
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 0;
+  }
+
+  td a {
+    word-break: break-all;
+  }
 }
+
+/* Focus outline for keyboard navigation across the page */
+:focus {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+

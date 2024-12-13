@@ -2,19 +2,23 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HBAR Watch</title>
-    <meta name="description" content="HBAR Watch displays a live feed of HBAR transfers fetched from a REST API endpoint. Track Hedera HBAR transactions and set alerts for transfers that exceed your set value.">
+    <meta name="description" content="HBAR Watch displays a live feed of HBAR transfers fetched from a REST API endpoint. Track Hedera HBAR transactions and set alerts for transfers that exceed your set value." />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="style.css?v=0.1">
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="manifest" href="/site.webmanifest">
-    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
-    <meta name="msapplication-TileColor" content="#da532c">
-    <meta name="theme-color" content="#ffffff">
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap"
+    />
+    <link rel="stylesheet" href="style.css?v=0.4" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
+    <meta name="msapplication-TileColor" content="#da532c" />
+    <meta name="theme-color" content="#ffffff" />
     <script type="application/ld+json">
         {
           "@context": "https://schema.org",
@@ -26,7 +30,7 @@
           "operatingSystem": "All"
         }
     </script>
-     
+
     <script>
         $(document).ready(function () {
             var last100Transfers = [];
@@ -36,6 +40,15 @@
             var alertThreshold = localStorage.getItem('alertThreshold') ? parseFloat(localStorage.getItem('alertThreshold')) : 50000;
             var totalValue = 0;
             var accumulationStartTime = new Date();
+            var toastTimeout;
+
+            function showToast(message) {
+                clearTimeout(toastTimeout);
+                $('#toast').text(message).fadeIn(200);
+                toastTimeout = setTimeout(function() {
+                    $('#toast').fadeOut(200);
+                }, 2000);
+            }
 
             function fetchPrice() {
                 $.get('https://mainnet-public.mirrornode.hedera.com/api/v1/network/exchangerate', function (data) {
@@ -116,7 +129,8 @@
                             var transfer = last100Transfers[i];
                             var link = 'https://hashscan.io/mainnet/transaction/' + transfer.timestamp;
                             var formattedAmount = transfer.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-                            tableRows += '<tr><td><a href="' + link + '" target="_blank">' + transfer.timestampReadable + '</a></td><td>' + transfer.account + '</td><td>' + formattedAmount + '</td></tr>';
+                            var rowClass = transfer.alerted ? 'alert-row' : '';
+                            tableRows += '<tr class="' + rowClass + '"><td><a href="' + link + '" target="_blank">' + transfer.timestampReadable + '</a></td><td>' + transfer.account + '</td><td>' + formattedAmount + '</td></tr>';
                         }
 
                         $('#content tbody').html(tableRows);
@@ -135,6 +149,7 @@
                 if (!isNaN(newMinAmount)) {
                     minAmount = newMinAmount;
                     localStorage.setItem('minAmount', minAmount);
+                    showToast('Minimum amount updated.');
                 } else {
                     alert('Please enter a valid number.');
                 }
@@ -145,6 +160,7 @@
                 if (!isNaN(newAlertThreshold)) {
                     alertThreshold = newAlertThreshold;
                     localStorage.setItem('alertThreshold', alertThreshold);
+                    showToast('Alert threshold updated.');
                 } else {
                     alert('Please enter a valid number.');
                 }
@@ -152,6 +168,12 @@
 
             $('#minAmountInput').val(minAmount);
             $('#alertThresholdInput').val(alertThreshold);
+
+            // Mobile filter toggle
+            $('.filter-toggle').click(function() {
+                $('.filters').toggleClass('open');
+                $(this).attr('aria-expanded', $('.filters').hasClass('open'));
+            });
         });
 
         function playAlertSound() {
@@ -162,32 +184,51 @@
 
 <body>
     <header>
-        <h1>HBAR Watch
-            <div class="lds-facebook">
+        <h1>
+            <span class="hbar-logo" aria-hidden="true">⋈</span> HBAR Watch
+            <div class="lds-facebook" aria-hidden="true">
                 <div></div>
                 <div></div>
                 <div></div>
             </div>
         </h1>
+        <button class="filter-toggle" aria-label="Toggle filters panel" aria-expanded="false">
+            Filters ⚙️
+        </button>
     </header>
     <main>
-        <section>
-            <a href="https://github.com/jsindy/hbarwatch">github.com/jsindy/hbarwatch</a><br><br>
-            <p>Total Value of HBAR transactions: <span id="totalValue"></span></p>
-            <label for="minAmountInput">Minimum Transfer Amount Filter (USD):</label>
-            <input type="number" id="minAmountInput" value="100" step="0.01" min="0">
-            <button id="updateMinAmount">Update</button>
-            <label for="alertThresholdInput">Alert Threshold (USD):</label>
-            <input type="number" id="alertThresholdInput" value="50000" step="0.01" min="0">
-            <button id="updateAlertThreshold">Update</button>
+        <section class="stats-section">
+            <div class="github-link">
+                <a href="https://github.com/jsindy/hbarwatch" target="_blank" aria-label="View GitHub repository">
+                    GitHub 🐙
+                </a>
+            </div>
+            <p class="total-value" aria-live="polite">
+                Total Value of HBAR transactions: <span id="totalValue"></span>
+            </p>
+            <div class="filters" aria-label="Filters">
+                <div class="filter-group">
+                    <label for="minAmountInput">Minimum Transfer Amount Filter (USD):</label>
+                    <input type="number" id="minAmountInput" step="0.01" min="0" aria-label="Minimum transfer amount filter in USD" placeholder="Enter minimum USD amount" />
+                    <button id="updateMinAmount" class="btn" aria-label="Update minimum amount">Update</button>
+                </div>
+                <div class="filter-group">
+                    <label for="alertThresholdInput">
+                        Alert Threshold (USD):
+                        <span class="info-icon" title="Transfers exceeding this amount are highlighted in red.">ℹ️</span>
+                    </label>
+                    <input type="number" id="alertThresholdInput" step="0.01" min="0" aria-label="Alert threshold in USD" placeholder="Enter alert threshold in USD" />
+                    <button id="updateAlertThreshold" class="btn" aria-label="Update alert threshold">Update</button>
+                </div>
+            </div>
         </section>
-        <section>
-            <table id="content">
+        <section class="transactions-section">
+            <table id="content" role="table" aria-label="HBAR transactions">
                 <thead>
                     <tr>
-                        <th>Consensus Timestamp</th>
-                        <th>Account</th>
-                        <th>Transfer Amount (USD)</th>
+                        <th scope="col">Consensus Timestamp</th>
+                        <th scope="col">Account</th>
+                        <th scope="col">Transfer Amount (USD)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -196,6 +237,8 @@
         </section>
     </main>
     <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
+    <div id="toast" role="status" aria-live="assertive"></div>
 </body>
 
 </html>
+
